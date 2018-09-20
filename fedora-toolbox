@@ -37,6 +37,14 @@ create()
             exit 1
         fi
 
+        if ! $prefix_sudo buildah run $working_container_name -- setcap \
+                     cap_net_admin,cap_net_raw+p \
+                     /usr/bin/ping >/dev/null 2>&42; then
+            $prefix_sudo buildah rmi $working_container_name >/dev/null 2>&42
+            echo "$0: failed to set capabilities on /usr/bin/ping"
+            exit 1
+        fi
+
         if ! $prefix_sudo buildah run $working_container_name -- useradd \
                      --no-create-home \
                      --uid $UID \
