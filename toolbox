@@ -794,8 +794,6 @@ run()
     $prefix_sudo podman exec \
             $set_dbus_system_bus_address \
             $set_environment \
-            --interactive \
-            --tty \
             $toolbox_container \
             capsh --caps="" -- -c "$command"
 )
