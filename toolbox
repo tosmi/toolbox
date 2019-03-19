@@ -1229,15 +1229,15 @@ usage()
     echo "               enter [-c | --container <name>]"
     echo "                     [-r | --release <release>]"
     echo "   or: toolbox [-v | --verbose]"
-    echo "               run [-c | --container <name>]"
-    echo "                   [-r | --release <release>]"
-    echo "   or: toolbox [-v | --verbose]"
     echo "               list [-c | --containers]"
     echo "                    [-i | --images]"
     echo "   or: toolbox rm [-a | --all]"
     echo "                  [-f | --force] [<container> ...]"
     echo "   or: toolbox rmi [-a | --all]"
     echo "                   [-f | --force] [<image> ...]"
+    echo "   or: toolbox [-v | --verbose]"
+    echo "               run [-c | --container <name>]"
+    echo "                   [-r | --release <release>]"
     echo "   or: toolbox --help"
 }
 
@@ -1394,34 +1394,6 @@ case $op in
         fi
         exit
         ;;
-    run )
-        if is_integer "$podman_pid"; then
-            forward_to_host
-        else
-            while has_prefix "$1" -; do
-                case $1 in
-                    -c | --container )
-                        shift
-                        exit_if_missing_argument --container "$1"
-                        toolbox_container=$1
-                        ;;
-                    -r | --release )
-                        shift
-                        exit_if_missing_argument --release "$1"
-                        arg=$(echo $1 | sed "s/^F\|^f//" 2>&3)
-                        exit_if_non_positive_argument --release "$arg"
-                        release=$arg
-                        ;;
-                    * )
-                        exit_if_unrecognized_option $1
-                esac
-                shift
-            done
-            update_container_and_image_names
-            run "$*"
-        fi
-        exit
-        ;;
     list )
         if is_integer "$podman_pid"; then
             # shellcheck disable=SC2119
@@ -1505,6 +1477,34 @@ case $op in
             else
                 remove_images "$rm_ids" "$rm_all" "$rm_force"
             fi
+        fi
+        exit
+        ;;
+    run )
+        if is_integer "$podman_pid"; then
+            forward_to_host
+        else
+            while has_prefix "$1" -; do
+                case $1 in
+                    -c | --container )
+                        shift
+                        exit_if_missing_argument --container "$1"
+                        toolbox_container=$1
+                        ;;
+                    -r | --release )
+                        shift
+                        exit_if_missing_argument --release "$1"
+                        arg=$(echo $1 | sed "s/^F\|^f//" 2>&3)
+                        exit_if_non_positive_argument --release "$arg"
+                        release=$arg
+                        ;;
+                    * )
+                        exit_if_unrecognized_option $1
+                esac
+                shift
+            done
+            update_container_and_image_names
+            run "$*"
         fi
         exit
         ;;
