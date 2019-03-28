@@ -1,7 +1,8 @@
 FROM registry.fedoraproject.org/fedora:29
 
 ENV NAME=fedora-toolbox VERSION=29
-LABEL com.redhat.component="$NAME" \
+LABEL com.github.debarshiray.toolbox="true" \
+      com.redhat.component="$NAME" \
       name="$FGC/$NAME" \
       version="$VERSION" \
       usage="This image is meant to be used with the toolbox command" \
@@ -20,5 +21,7 @@ RUN rm /missing-docs
 COPY extra-packages /
 RUN dnf -y install $(<extra-packages)
 RUN rm /extra-packages
+
+RUN dnf clean all
 
 CMD /bin/sh
