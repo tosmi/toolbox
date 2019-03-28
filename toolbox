@@ -704,6 +704,66 @@ enter()
 (
     shell_to_exec=/bin/bash
 
+    # echo "$base_toolbox_command: checking if container $toolbox_container exists" >&3
+
+    # if ! toolbox_image=$($prefix_sudo podman inspect \
+    #                              --format "{{.ImageName}}" \
+    #                              --type container \
+    #                              $toolbox_container 2>&3); then
+    #     echo "$base_toolbox_command: container $toolbox_container not found" >&2
+    #     echo "Use the 'create' command to create a toolbox." >&2
+    #     echo "Try '$base_toolbox_command --help' for more information." >&2
+    #     exit 1
+    # fi
+
+    # echo "$base_toolbox_command: container $toolbox_container was created from image $toolbox_image" >&3
+
+    # [ "$toolbox_image" != "" ] 2>&3 && check_image_for_volumes "$toolbox_image"
+
+    # echo "$base_toolbox_command: trying to start container $toolbox_container" >&3
+
+    # if ! $prefix_sudo podman start $toolbox_container >/dev/null 2>&3; then
+    #     echo "$base_toolbox_command: failed to start container $toolbox_container" >&2
+    #     exit 1
+    # fi
+
+    # if [ "$DBUS_SYSTEM_BUS_ADDRESS" != "" ]; then
+    #     set_dbus_system_bus_address="--env DBUS_SYSTEM_BUS_ADDRESS=$DBUS_SYSTEM_BUS_ADDRESS"
+    # fi
+
+    # set_environment=$(create_environment_options)
+
+    # echo "$base_toolbox_command: looking for $SHELL in container $toolbox_container" >&3
+
+    # if $prefix_sudo podman exec $toolbox_container test -f "$SHELL" 2>&3; then
+    #     shell_to_exec=$SHELL
+    # else
+    #     echo "$base_toolbox_command: $SHELL not found in $toolbox_container; using $shell_to_exec instead" >&3
+    # fi
+
+    # echo "$base_toolbox_command: trying to exec $shell_to_exec in container $toolbox_container" >&3
+
+    # $prefix_sudo podman exec \
+    #         $set_dbus_system_bus_address \
+    #         $set_environment \
+    #         --interactive \
+    #         --tty \
+    #         "$toolbox_container" \
+    #         capsh --caps="" -- -c 'cd "$1"; export PS1="$2"; shift 2; exec "$@"' \
+    #                 /bin/sh \
+    #                 "$PWD" \
+    #                 "$toolbox_prompt" \
+    #                 "$shell_to_exec" -l 2>&3
+
+    run "$shell_to_exec" "$SHELL" "--interactive --tty"
+)
+
+run()
+(
+    command="$1"
+    fallback_command="$2"
+    podman_extra_arguments="$3"
+
     echo "$base_toolbox_command: checking if container $toolbox_container exists" >&3
 
     if ! toolbox_image=$($prefix_sudo podman inspect \
@@ -733,27 +793,22 @@ enter()
 
     set_environment=$(create_environment_options)
 
-    echo "$base_toolbox_command: looking for $SHELL in container $toolbox_container" >&3
-
-    if $prefix_sudo podman exec $toolbox_container test -f "$SHELL" 2>&3; then
-        shell_to_exec=$SHELL
-    else
-        echo "$base_toolbox_command: $SHELL not found in $toolbox_container; using $shell_to_exec instead" >&3
+    if [ "$fallback_command" != "" ]; then
+	binary=$(echo $command | cut -d ' ' -f 1)
+	if $prefix_sudo podman exec $toolbox_container test -x "$binary" 2>&3; then
+	    echo "$base_toolbox_command: $binary not found in $toolbox_container; using $fallback_command instead" >&3
+            command=$fallback_command
+	fi
     fi
 
-    echo "$base_toolbox_command: trying to exec $shell_to_exec in container $toolbox_container" >&3
+    echo "$base_toolbox_command: trying to run '$command' in container $toolbox_container" >&3
 
     $prefix_sudo podman exec \
+            $podman_extra_arguments \
             $set_dbus_system_bus_address \
             $set_environment \
-            --interactive \
-            --tty \
-            "$toolbox_container" \
-            capsh --caps="" -- -c 'cd "$1"; export PS1="$2"; shift 2; exec "$@"' \
-                    /bin/sh \
-                    "$PWD" \
-                    "$toolbox_prompt" \
-                    "$shell_to_exec" -l 2>&3
+            $toolbox_container \
+            capsh --caps="" -- -c "$command"
 )
 
 run()
@@ -1138,7 +1193,10 @@ usage()
     echo "   or: toolbox rm [-a | --all]"
     echo "                  [-f | --force] [<container> ...]"
     echo "   or: toolbox rmi [-a | --all]"
-    echo "   or:             [-f | --force] [<image> ...]"
+    echo "                   [-f | --force] [<image> ...]"
+    echo "   or: toolbox [-v | --verbose]"
+    echo "               run [-c | --container <name>]"
+    echo "                   [-r | --release <release>]"
     echo "   or: toolbox --help"
 }
 
