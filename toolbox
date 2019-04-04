@@ -703,8 +703,7 @@ create()
 enter()
 (
     shell_to_exec=/bin/bash
-
-    run "cd $PWD; PS1=bla $shell_to_exec" "$SHELL" "--interactive --tty"
+    run "cd $PWD; PS1='$toolbox_prompt' $shell_to_exec" "$SHELL" "--interactive --tty"
 )
 
 run()
