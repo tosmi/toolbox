@@ -51,6 +51,7 @@ environment_variables="COLORTERM \
         XDG_SESSION_DESKTOP \
         XDG_SESSION_ID \
         XDG_SESSION_TYPE \
+        PATH \
         XDG_VTNR"
 fgc=""
 
@@ -1571,7 +1572,7 @@ run()
     if ! $podman_command exec \
                  --user "$USER" \
                  "$toolbox_container" \
-                 sh -c 'command -v "$1"' sh "$program" >/dev/null 2>&3; then
+                 bash -lc 'command -v "$1"' sh "$program" >/dev/null 2>&3; then
         if $fallback_to_bash; then
             echo "$base_toolbox_command: $program not found in $toolbox_container; using /bin/bash instead" >&3
             program=/bin/bash
